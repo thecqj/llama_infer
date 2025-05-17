@@ -20,7 +20,7 @@ public:
 private:
     size_t byte_size_ = 0;                                  // 内存大小
     void* ptr_ = nullptr;                                   // 内存指针
-    std::shared_ptr<DeviceAllocator> allocator_;            // 分配器
+    std::shared_ptr<DeviceAllocator> allocator_ = nullptr;  // 分配器
     bool use_externel_ = false;                             // 是否对该块内存有归属权
     DeviceType device_type_ = DeviceType::kDeviceUnknown;   // 设备类型
 

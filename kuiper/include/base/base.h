@@ -10,12 +10,27 @@ enum class DeviceType : uint8_t {
     kDeviceGPU     = 2
 };
 
+// 数据类型
 enum class DataType : uint8_t {
     kDataTypeUnknown = 0,
     kDataTypeFp32    = 1,
     kDataTypeInt32   = 2,
     kDataTypeInt8    = 3
 };
+
+// 数据类型的大小
+inline size_t DataTypeSize(DataType data_type) {
+    switch (data_type) {
+        case DataType::kDataTypeFp32:
+            return sizeof(float);
+        case DataType::kDataTypeInt32:
+            return sizeof(int32_t);
+        case DataType::kDataTypeInt8:
+            return sizeof(int8_t);
+        default:
+            return 0;
+    }
+}
 
 class NoCopyable {
 protected:

@@ -51,7 +51,7 @@ bool Buffer::allocate() {
 
 void Buffer::copy_from(const Buffer& buffer) {
     CHECK_NE(buffer.ptr_, nullptr);
-    CHECK_NE(allocator_, nullptr);
+    CHECK_NE(allocator_, nullptr);  // 无论是否有归属权，都会拷贝内存
 
     const size_t byte_size = std::min(byte_size_, buffer.byte_size_);
     const DeviceType& buffer_device = buffer.device_type();
