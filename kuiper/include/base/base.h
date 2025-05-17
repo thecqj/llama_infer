@@ -10,6 +10,13 @@ enum class DeviceType : uint8_t {
     kDeviceGPU     = 2
 };
 
+enum class DataType : uint8_t {
+    kDataTypeUnknown = 0,
+    kDataTypeFp32    = 1,
+    kDataTypeInt32   = 2,
+    kDataTypeInt8    = 3
+};
+
 class NoCopyable {
 protected:
     NoCopyable() = default;

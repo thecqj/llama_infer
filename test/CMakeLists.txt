@@ -10,10 +10,10 @@ set(link_ext_lib glog::glog GTest::gtest)
 
 # 收集测试源文件
 aux_source_directory(../test DIR_TEST)
-aux_source_directory(../test/optimized DIR_TEST_OPTIMIZED)
+aux_source_directory(../test/buffer DIR_TEST_BUFFER)
 
 # 创建可执行目标
-add_executable(test_llm ${DIR_TEST} ${DIR_TEST_OPTIMIZED})
+add_executable(test_llm ${DIR_TEST} ${DIR_TEST_BUFFER})
 
 # 将 glog 和 GTest 链接到 test_llm 可执行文件
 target_link_libraries(test_llm ${link_ext_lib})

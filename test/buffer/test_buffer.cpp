@@ -3,18 +3,39 @@
 
 #include "base/buffer.h"
 
-TEST(test_buffer, alloc) {
+TEST(test_buffer, alloc_1) {
     using namespace base;
     auto alloc = CPUDeviceAllocatorFactory::get_instance();
-    Buffer buffer(32, alloc);
+    Buffer buffer(32, alloc);   // use_externel == false, allocator != nullptr, ptr == nullptr
+
+    ASSERT_EQ(buffer.is_externel(), false);
     ASSERT_NE(buffer.ptr(), nullptr);
+}
+
+TEST(test_buffer, alloc_2) {
+    using namespace base;
+    auto alloc = CPUDeviceAllocatorFactory::get_instance();
+
+    float* ptr = new float{3.14};
+    Buffer buffer(4, alloc, ptr);   // use_externel == false, allocator != nullptr, ptr != nullptr
+
+    ASSERT_EQ(buffer.is_externel(), false);
+    ASSERT_NE(buffer.ptr(), ptr);
+    
+    delete ptr;
 }
 
 TEST(test_buffer, use_externel) {
     using namespace base;
+
     float* ptr = new float[32];
+    *ptr = 5;
     Buffer buffer(32, nullptr, ptr, true);
+    auto buffer_ptr = static_cast<float*>(buffer.ptr());
+
     ASSERT_EQ(buffer.is_externel(), true);
+    ASSERT_EQ(*buffer_ptr, *ptr);
+
     delete[] ptr;
 }
 

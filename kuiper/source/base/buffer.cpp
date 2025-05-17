@@ -8,12 +8,18 @@ Buffer::Buffer(size_t byte_size, std::shared_ptr<DeviceAllocator> allocator,
                void* ptr, bool use_externel)
         : byte_size_{byte_size}, allocator_{allocator}, 
           ptr_{ptr}, use_externel_{use_externel} {
-    if (!ptr_ && allocator_) {
-        // 如果只是传了分配器过来，需要用它来初始化其他信息
-        device_type_ = allocator_->device_type();
-        use_externel_ = false;
-        // 使用分配器申请内存
+
+    if (use_externel == true) {
+        // 检查不具有归属权时需要满足的条件
+        CHECK(allocator == nullptr && ptr != nullptr) <<
+            "allocator is not nullptr or ptr is nullptr when use_externel is true";
+    } else {
+        // 检查具有归属权时需要满足的条件
+        CHECK(allocator != nullptr) << "allocator is nullptr when use_externel is false";
+
+        // 无论ptr是否为空，都应申请内存
         ptr_ = allocator_->allocate(byte_size_);
+        device_type_ = allocator_->device_type();
     }
 }
 

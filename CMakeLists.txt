@@ -91,6 +91,7 @@ find_package(Armadillo REQUIRED)
 
 # 源文件收集
 aux_source_directory(kuiper/source/base/ DIR_BASE)
+# aux_source_directory(kuiper/source/tensor/ DIR_TENSOR)
 
 # 动态库构建
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)

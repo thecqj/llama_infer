@@ -28,8 +28,8 @@ public:
     virtual void release(void* ptr) const = 0;
 
     virtual void memcpy(void* dest_ptr, const void* src_ptr, size_t byte_size,
-                        // 后三个参数供CUDA使用
                         MemcpyKind memcpy_kind = MemcpyKind::kMemcpyCPU2CPU,
+                        // 后两个参数供CUDA使用
                         void* stream = nullptr, 
                         bool need_sync = false) const;
     
