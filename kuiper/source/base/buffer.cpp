@@ -10,11 +10,11 @@ Buffer::Buffer(size_t byte_size, std::shared_ptr<DeviceAllocator> allocator,
           ptr_{ptr}, use_externel_{use_externel} {
 
     if (use_externel == true) {
-        // 检查不具有归属权时需要满足的条件
-        CHECK(allocator == nullptr && ptr != nullptr) <<
-            "allocator is not nullptr or ptr is nullptr when use_externel is true";
+        // 检查不具有归属权时需要满足的条件，ptr不能为空。若allocator不空可以在将来使用
+        CHECK(ptr != nullptr) <<
+            "ptr is nullptr when use_externel is true";
     } else {
-        // 检查具有归属权时需要满足的条件
+        // 检查具有归属权时需要满足的条件，allocator不能为空
         CHECK(allocator != nullptr) << "allocator is nullptr when use_externel is false";
 
         // 无论ptr是否为空，都应申请内存
@@ -35,7 +35,14 @@ Buffer::~Buffer() {
 bool Buffer::allocate() {
     if (!allocator_ || byte_size_ == 0) return false;
 
-    use_externel_ = false;
+    // 根据是否有归属权决定要不要释放原内存
+    if (use_externel_ == true) {
+        use_externel_ = false;  // 更新
+    } else {
+        allocator_->release(ptr_);  // 释放内存（可能导致悬空指针）
+    }
+
+    // 分配新的内存
     ptr_ = allocator_->allocate(byte_size_);
 
     if (!ptr_) return false;

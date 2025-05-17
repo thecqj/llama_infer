@@ -30,13 +30,43 @@ TEST(test_buffer, use_externel) {
 
     float* ptr = new float[32];
     *ptr = 5;
-    Buffer buffer(32, nullptr, ptr, true);
+    Buffer buffer(32, nullptr, ptr, true);  // use_externel == true, ptr != nullptr, allocator == nullptr
     auto buffer_ptr = static_cast<float*>(buffer.ptr());
 
     ASSERT_EQ(buffer.is_externel(), true);
     ASSERT_EQ(*buffer_ptr, *ptr);
 
     delete[] ptr;
+}
+
+TEST(test_buffer, allocate_1) {
+    using namespace base;
+    auto alloc = CPUDeviceAllocatorFactory::get_instance();
+
+    Buffer buffer(4, alloc);
+    *static_cast<float*>(buffer.ptr()) = 3.14;
+
+    buffer.allocate();
+    auto ptr = static_cast<float*>(buffer.ptr());
+    *ptr = 5;
+
+    ASSERT_EQ(buffer.is_externel(), false);
+    ASSERT_EQ(*static_cast<float*>(buffer.ptr()), 5);
+}
+
+TEST(test_buffer, allocate_2) {
+    using namespace base;
+    auto alloc = CPUDeviceAllocatorFactory::get_instance();
+
+    float* ptr = new float{3.14};
+    Buffer buffer(4, alloc, ptr, true); // use_externel == true, ptr != nullptr, allocator != nullptr
+    ASSERT_EQ(buffer.is_externel(), true);
+
+    buffer.allocate();
+    *static_cast<float*>(buffer.ptr()) = 5;
+
+    ASSERT_EQ(buffer.is_externel(), false);
+    ASSERT_EQ(*static_cast<float*>(buffer.ptr()), 5);
 }
 
 TEST(test_buffer, copy_from_1) {
