@@ -5,9 +5,9 @@
 namespace base {
 
 Buffer::Buffer(size_t byte_size, std::shared_ptr<DeviceAllocator> allocator, 
-               void* ptr, bool use_externel)
+               void* ptr, bool use_externel, DeviceType device_type)
         : byte_size_{byte_size}, allocator_{allocator}, 
-          ptr_{ptr}, use_externel_{use_externel} {
+          ptr_{ptr}, use_externel_{use_externel}, device_type_{device_type} {
 
     if (use_externel == true) {
         // 检查不具有归属权时需要满足的条件，ptr不能为空。若allocator不空可以在将来使用

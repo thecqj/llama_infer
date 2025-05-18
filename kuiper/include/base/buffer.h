@@ -10,7 +10,8 @@ class Buffer : public NoCopyable, std::enable_shared_from_this<Buffer> {
 public:
     explicit Buffer() = default;
     explicit Buffer(size_t byte_size, std::shared_ptr<DeviceAllocator> allocator = nullptr,
-                    void* ptr = nullptr, bool use_externel = false);
+                    void* ptr = nullptr, bool use_externel = false,
+                    DeviceType device_type = DeviceType::kDeviceUnknown);
     virtual ~Buffer();
     
     bool allocate();

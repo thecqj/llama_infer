@@ -61,7 +61,7 @@ public:
 // 工厂模式
 class CPUDeviceAllocatorFactory {
 public:
-    static std::shared_ptr<CPUDeviceAllocator> get_instance() {
+    static std::shared_ptr<DeviceAllocator> get_instance() {
         if (instance == nullptr) {
             instance = std::make_shared<CPUDeviceAllocator>();
         }
@@ -69,12 +69,12 @@ public:
     }
 
 private:
-    static std::shared_ptr<CPUDeviceAllocator> instance;
+    static std::shared_ptr<DeviceAllocator> instance;
 };
 
 class CUDADeviceAllocatorFactory {
 public:
-    static std::shared_ptr<CUDADeviceAllocator> get_instance() {
+    static std::shared_ptr<DeviceAllocator> get_instance() {
         if (instance == nullptr) {
             instance = std::make_shared<CUDADeviceAllocator>();
         }
@@ -82,7 +82,7 @@ public:
     }
 
 private:
-    static std::shared_ptr<CUDADeviceAllocator> instance;
+    static std::shared_ptr<DeviceAllocator> instance;
 };
 
 } // namespace base
