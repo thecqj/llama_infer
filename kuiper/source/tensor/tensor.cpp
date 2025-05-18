@@ -143,7 +143,97 @@ Tensor::Tensor(base::DataType data_type, std::vector<int32_t> dims, bool need_al
 }
 
 // ---------------------------------------- 内存有关函数 ----------------------------------------
+// 辅助函数
+void Tensor::set_device_type(base::DeviceType device_type) {
+    if (buffer_) {
+        buffer_->set_device_type(device_type);
+    }
+}
 
+base::DeviceType Tensor::device_type() const {
+    if (!buffer_) return base::DeviceType::kDeviceUnknown;
+    return buffer_->device_type();
+}
+
+void Tensor::to_cpu() {
+    // 空张量，无需移动
+    if (!buffer_) return;
+
+    // 取原设备类型
+    const base::DeviceType device_type = this->device_type();
+
+    // 若原设备类型是 kDeviceUnknown 或 kDeviceCPU
+    if (device_type == base::DeviceType::kDeviceUnknown) {
+        LOG(ERROR) << "The device type of the tensor is unknown.";
+    } else if (device_type == base::DeviceType::kDeviceCPU) {
+        LOG(INFO) << "The device type of the tensor is already cpu.";
+        return;
+    }
+
+    // 否则，从 GPU 迁移到 CPU 中
+    size_t byte_size = this->byte_size();
+    auto cpu_alloc = base::CPUDeviceAllocatorFactory::get_instance();
+    auto cpu_buffer = std::make_shared<base::Buffer>(byte_size, cpu_alloc);
+    cpu_alloc->memcpy(cpu_buffer->ptr(), buffer_->ptr(), byte_size,
+                      base::MemcpyKind::kMemcpyCUDA2CPU);
+    buffer_ = cpu_buffer;
+}
+
+void Tensor::to_cuda(cudaStream_t stream) {
+    // 空张量，无需移动
+    if (!buffer_) return;
+
+    // 取原设备类型
+    const base::DeviceType device_type = this->device_type();
+
+    // 若原设备类型是 kDeviceUnknown 或 kDeviceGPU
+    if (device_type == base::DeviceType::kDeviceUnknown) {
+        LOG(ERROR) << "The device type of the tensor is unknown.";
+    } else if (device_type == base::DeviceType::kDeviceGPU) {
+        LOG(INFO) << "The device type of the tensor is already gpu.";
+        return;
+    }
+
+    // 否则，从 CPU 迁移到 GPU 中
+    size_t byte_size = this->byte_size();
+    auto cuda_alloc = base::CUDADeviceAllocatorFactory::get_instance();
+    auto cuda_buffer = std::make_shared<base::Buffer>(byte_size, cuda_alloc);
+    cuda_alloc->memcpy(cuda_buffer->ptr(), buffer_->ptr(), byte_size,
+                       base::MemcpyKind::kMemcpyCPU2CUDA, stream);
+    buffer_ = cuda_buffer;
+}
+
+bool Tensor::assign(std::shared_ptr<base::Buffer> buffer) {
+    // 参数 buffer 不能为空
+    if (!buffer) {
+        LOG(ERROR) << "The buffer parameter in the assign function is null pointer!";
+        return false;
+    }
+
+    // 原内存和新内存的设备必须一致
+    if (buffer_ && buffer_->device_type() != buffer->device_type()) {
+        LOG(ERROR) << "The device type of the new buffer is different from the original one.";
+        return false;
+    }
+
+    size_t byte_size = this->byte_size();
+    if (buffer->byte_size() < byte_size) {  // 新的内存容量更小，不能assign
+        LOG(ERROR) << "The size of buffer is too small for the tensor!";
+        return false;
+    }
+
+    buffer_ = buffer;
+    return true;
+}
+
+void Tensor::reset(base::DataType data_type, const std::vector<int32_t>& dims) {
+    // 重置维度信息
+    data_type_ = data_type;
+    dims_ = dims;
+    size_ = reduce_dimension(dims.begin(), dims.end(), 1);
+    // 不分配内存（由用户完成）
+    buffer_ = nullptr;
+}
 
 // ---------------------------------------- 张量有关函数 ----------------------------------------
 std::vector<int32_t> Tensor::strides() const {

@@ -48,25 +48,25 @@ private:
     void init_buffer(std::shared_ptr<base::DeviceAllocator> alloc, base::DataType data_type,
                      bool need_alloc, void* ptr, base::DeviceType device_type);
 
+    // 设置张量数据所在的设备类型
+    void set_device_type(base::DeviceType device_type);
+
 public:
     // 分配内存，或重新分配内存
     bool allocate(std::shared_ptr<base::DeviceAllocator> allocator, bool need_realloc = false);
 
-    // // 内存数据迁移
-    // void to_cpu();
-    // void to_cuda(cudaStream_t stream = nullptr);
+    // 内存数据迁移
+    void to_cpu();
+    void to_cuda(cudaStream_t stream = nullptr);
 
-    // // 重新设置内存
-    // bool assign(std::shared_ptr<base::Buffer> buffer);
+    // 重新设置更大的内存（维度等信息不变，但内存和实际数据变了）
+    bool assign(std::shared_ptr<base::Buffer> buffer);
 
-    // // 重置张量的数据类型和维度，可能触发内存重新分配
-    // void reset(base::DataType data_type, const std::vector<int32_t>& dims);
+    // 重置张量的数据类型和维度（内存分配交给用户）
+    void reset(base::DataType data_type, const std::vector<int32_t>& dims);
 
-    // // 设置张量数据所在的设备类型，可能需要迁移数据
-    // void set_device_type(base::DeviceType device_type);
-
-    // // 返回当前数据所在的设备类型
-    // base::DeviceType device_type() const;
+    // 返回当前数据所在的设备类型
+    base::DeviceType device_type() const;
 
 public:
     // 返回指向张量数据的指针

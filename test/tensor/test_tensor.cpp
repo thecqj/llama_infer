@@ -403,3 +403,150 @@ TEST(test_tensor, clone_2) {
 
     delete[] ptr;
 }
+
+TEST(test_tensor, to_cpu) {
+    using namespace tensor;
+    using namespace base;
+    auto alloc = CUDADeviceAllocatorFactory::get_instance();
+    std::vector<int32_t> dims{1, 2, 2, 5};
+
+    Tensor tensor(DataType::kDataTypeFp32, dims, true, alloc);
+    ASSERT_EQ(tensor.device_type(), DeviceType::kDeviceGPU);
+
+    tensor.to_cpu();
+    ASSERT_EQ(tensor.device_type(), DeviceType::kDeviceCPU);
+    ASSERT_EQ(tensor.empty(), false);
+    ASSERT_EQ(tensor.size(), 20);
+    ASSERT_EQ(tensor.byte_size(), 80);
+    ASSERT_EQ(tensor.dims_size(), 4);
+    ASSERT_EQ(tensor.get_dim(0), 1);
+    ASSERT_NE(tensor.get_buffer(), nullptr);
+
+    auto buffer = tensor.get_buffer();
+    ASSERT_EQ(buffer->byte_size(), 80);
+    ASSERT_EQ(buffer->is_externel(), false);
+}
+
+TEST(test_tensor, to_cpu_externel) {
+    using namespace tensor;
+    using namespace base;
+
+    float* d_ptr;
+    const size_t byte_size = 20 * sizeof(float);
+    cudaMalloc(&d_ptr, byte_size);
+
+    std::vector<int32_t> dims{1, 2, 2, 5};
+    Tensor tensor(DataType::kDataTypeFp32, dims, false, nullptr, d_ptr, DeviceType::kDeviceGPU);
+    ASSERT_EQ(tensor.device_type(), DeviceType::kDeviceGPU);
+
+    tensor.to_cpu();
+    ASSERT_EQ(tensor.device_type(), DeviceType::kDeviceCPU);
+    ASSERT_EQ(tensor.empty(), false);
+    ASSERT_EQ(tensor.size(), 20);
+    ASSERT_EQ(tensor.byte_size(), 80);
+    ASSERT_EQ(tensor.dims_size(), 4);
+    ASSERT_EQ(tensor.get_dim(0), 1);
+    ASSERT_NE(tensor.get_buffer(), nullptr);
+
+    auto buffer = tensor.get_buffer();
+    ASSERT_EQ(buffer->byte_size(), 80);
+    ASSERT_EQ(buffer->is_externel(), false);
+
+    cudaFree(d_ptr);
+}
+
+TEST(test_tensor, to_cuda) {
+    using namespace tensor;
+    using namespace base;
+    auto alloc = CPUDeviceAllocatorFactory::get_instance();
+    std::vector<int32_t> dims{1, 2, 2, 5};
+
+    Tensor tensor(DataType::kDataTypeFp32, dims, true, alloc);
+    ASSERT_EQ(tensor.device_type(), DeviceType::kDeviceCPU);
+
+    tensor.to_cuda();
+    ASSERT_EQ(tensor.device_type(), DeviceType::kDeviceGPU);
+    ASSERT_EQ(tensor.empty(), false);
+    ASSERT_EQ(tensor.size(), 20);
+    ASSERT_EQ(tensor.byte_size(), 80);
+    ASSERT_EQ(tensor.dims_size(), 4);
+    ASSERT_EQ(tensor.get_dim(0), 1);
+    ASSERT_NE(tensor.get_buffer(), nullptr);
+
+    auto buffer = tensor.get_buffer();
+    ASSERT_EQ(buffer->byte_size(), 80);
+    ASSERT_EQ(buffer->is_externel(), false);
+}
+
+TEST(test_tensor, to_cuda_externel) {
+    using namespace tensor;
+    using namespace base;
+
+    const size_t byte_size = 20 * sizeof(float);
+    float* h_ptr = (float*)malloc(byte_size);
+
+    std::vector<int32_t> dims{1, 2, 2, 5};
+    Tensor tensor(DataType::kDataTypeFp32, dims, false, nullptr, h_ptr, DeviceType::kDeviceCPU);
+    ASSERT_EQ(tensor.device_type(), DeviceType::kDeviceCPU);
+
+    tensor.to_cuda();
+    ASSERT_EQ(tensor.device_type(), DeviceType::kDeviceGPU);
+    ASSERT_EQ(tensor.empty(), false);
+    ASSERT_EQ(tensor.size(), 20);
+    ASSERT_EQ(tensor.byte_size(), 80);
+    ASSERT_EQ(tensor.dims_size(), 4);
+    ASSERT_EQ(tensor.get_dim(0), 1);
+    ASSERT_NE(tensor.get_buffer(), nullptr);
+
+    auto buffer = tensor.get_buffer();
+    ASSERT_EQ(buffer->byte_size(), 80);
+    ASSERT_EQ(buffer->is_externel(), false);
+
+    free(h_ptr);
+}
+
+TEST(test_tensor, assign) {
+    using namespace tensor;
+    using namespace base;
+    auto alloc = CPUDeviceAllocatorFactory::get_instance();
+    std::vector<int32_t> dims{1, 2, 2, 5};
+
+    Tensor tensor(DataType::kDataTypeInt32, dims, true, alloc);
+    auto buffer_old = tensor.get_buffer();
+
+    auto buffer_new = std::make_shared<Buffer>();
+    ASSERT_EQ(tensor.assign(buffer_new), false);
+    ASSERT_EQ(tensor.get_buffer(), buffer_old);
+
+    buffer_new = std::make_shared<Buffer>(40, alloc);
+    ASSERT_EQ(tensor.assign(buffer_new), false);
+    ASSERT_EQ(tensor.get_buffer(), buffer_old);
+
+    buffer_new = std::make_shared<Buffer>(160, alloc);
+    ASSERT_EQ(tensor.assign(buffer_new), true);
+    ASSERT_NE(tensor.get_buffer(), buffer_old);
+}
+
+TEST(test_tensor, reset) {
+    using namespace tensor;
+    using namespace base;
+    auto alloc = CPUDeviceAllocatorFactory::get_instance();
+    std::vector<int32_t> dims{1, 2, 2, 5};
+
+    Tensor tensor(DataType::kDataTypeInt32, dims, true, alloc);
+    tensor.reset(DataType::kDataTypeFp32, {2, 2});
+
+    ASSERT_EQ(tensor.empty(), true);
+    ASSERT_EQ(tensor.size(), 4);
+    ASSERT_EQ(tensor.byte_size(), 16);
+    ASSERT_EQ(tensor.dims_size(), 2);
+    ASSERT_EQ(tensor.get_dim(0), 2);
+    ASSERT_EQ(tensor.get_buffer(), nullptr);
+
+    tensor.allocate(alloc, true);
+    ASSERT_NE(tensor.get_buffer(), nullptr);
+
+    auto buffer = tensor.get_buffer();
+    ASSERT_EQ(buffer->byte_size(), 16);
+    ASSERT_EQ(buffer->is_externel(), false);
+}
