@@ -12,9 +12,10 @@ set(link_ext_lib glog::glog GTest::gtest)
 aux_source_directory(../test DIR_TEST)
 aux_source_directory(../test/buffer DIR_TEST_BUFFER)
 aux_source_directory(../test/tensor DIR_TEST_TENSOR)
+aux_source_directory(../test/op DIR_TEST_OP)
 
 # 创建可执行目标
-add_executable(test_llm ${DIR_TEST} ${DIR_TEST_BUFFER} ${DIR_TEST_TENSOR})
+add_executable(test_llm ${DIR_TEST} ${DIR_TEST_BUFFER} ${DIR_TEST_TENSOR} ${DIR_TEST_OP})
 
 # 将 glog 和 GTest 链接到 test_llm 可执行文件
 target_link_libraries(test_llm ${link_ext_lib})
