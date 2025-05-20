@@ -5,7 +5,6 @@
 #include <string>
 
 namespace base {
-
 // 设备类型
 enum class DeviceType : uint8_t {
     kDeviceUnknown = 0,

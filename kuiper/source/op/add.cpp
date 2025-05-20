@@ -1,6 +1,7 @@
 #include <glog/logging.h>
 
 #include "op/add.h"
+#include "kernel/kernels_interface.h"
 
 namespace op {
 
@@ -16,24 +17,22 @@ base::Status VecAddLayer::check() const {
     auto input2 = get_input(1);
     auto output = get_output(0);
 
-    // 计算张量大小，检查维度信息
-    size_t size = input1.size();
     base::Status status;
 
     // 检查 input1
-    status = check_tensor_with_dim(input1, device_type_, data_type_, size);
+    status = check_tensor(input1, device_type_, data_type_);
     if (!status) {
         LOG(ERROR) << "The input tensor 1 error in the add layer.";
         return status;
     }
     // 检查 input2
-    status = check_tensor_with_dim(input2, device_type_, data_type_, size);
+    status = check_tensor(input2, device_type_, data_type_);
     if (!status) {
         LOG(ERROR) << "The input tensor 2 error in the add layer.";
         return status;
     }
     // 检查 output
-    status = check_tensor_with_dim(output, device_type_, data_type_, size);
+    status = check_tensor(output, device_type_, data_type_);
     if (!status) {
         LOG(ERROR) << "The output tensor error in the add layer.";
         return status;
@@ -58,7 +57,8 @@ base::Status VecAddLayer::forward() {
     }
 
     // 实际计算
-    LOG(INFO) << "DEBUG: run add_kernel()...";
+    auto accumulate_call = kernel::get_add_kernel(device_type_);
+    accumulate_call(input1, input2, output, cuda_config_ ? cuda_config_->stream : nullptr);
 
     return base::error::Success();
 }

@@ -146,6 +146,9 @@ public:
     base::Status check_tensor(const tensor::Tensor& tensor, base::DeviceType device_type,
                               base::DataType data_type) const;
 
+    base::Status check_tensor_with_dim(const tensor::Tensor& tensor, base::DeviceType device_type,
+                                       base::DataType data_type, std::vector<int32_t>& dims) const;
+
     template <typename... Args>
     base::Status check_tensor_with_dim(const tensor::Tensor& tensor, base::DeviceType device_type,
                                        base::DataType data_type, Args&&... args) const;
@@ -168,34 +171,8 @@ template <typename... Args>
 inline base::Status 
 Layer::check_tensor_with_dim(const tensor::Tensor& tensor, base::DeviceType device_type,
                              base::DataType data_type, Args&&... args) const {
-    // 检查类型
-    if (tensor.empty()) {
-        return base::error::InvalidArgument("The tensor parameter is empty.");
-    }
-    if (tensor.device_type() != device_type) {
-        return base::error::InvalidArgument("The tensor has a wrong device type.");
-    }
-    if (tensor.data_type() != data_type) {
-        return base::error::InvalidArgument("The tensor has a wrong data type.");
-    }
-
     std::vector<int32_t> dims{static_cast<int32_t>(args)...}; // 参数展开
-    auto dims_size = tensor.dims_size();
-
-    // 检查维度个数
-    if (dims_size != dims.size()) {
-        return base::error::InvalidArgument("The tensor has a wrong dims_size.");
-    }
-
-    // 检查各维度大小
-    for (int i = 0; i < dims_size; ++i) {
-        auto dim = tensor.get_dim(i);
-        if (dim != dims[i]) {
-            return base::error::InvalidArgument("The tensor has a wrong dim shape.");
-        }
-    }
-
-    return base::error::Success();
+    return check_tensor_with_dim(tensor, device_type, data_type, dims);
 }
 
 // ----------------------------------------- 带参算子类 -----------------------------------------

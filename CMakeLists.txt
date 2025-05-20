@@ -93,11 +93,14 @@ find_package(Armadillo REQUIRED)
 aux_source_directory(kuiper/source/base/ DIR_BASE)
 aux_source_directory(kuiper/source/tensor/ DIR_TENSOR)
 aux_source_directory(kuiper/source/op/ DIR_OP)
+aux_source_directory(kuiper/source/op/kernel DIR_KERNEL)
+aux_source_directory(kuiper/source/op/kernel/cpu DIR_KERNEL_CPU)
+aux_source_directory(kuiper/source/op/kernel/cuda DIR_KERNEL_CUDA)
 
 # 动态库构建
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 # 添加源文件路径
-add_library(llama SHARED ${DIR_BASE} ${DIR_TENSOR} ${DIR_OP})
+add_library(llama SHARED ${DIR_BASE} ${DIR_TENSOR} ${DIR_OP} ${DIR_KERNEL} ${DIR_KERNEL_CPU} ${DIR_KERNEL_CUDA})
 # 需要链接的库和依赖项
 target_link_libraries(llama sentencepiece glog::glog gtest gtest_main pthread cudart armadillo)
 # 添加 CUDA 库的路径

@@ -58,6 +58,37 @@ base::Status Layer::check_tensor(const tensor::Tensor& tensor, base::DeviceType 
     return base::error::Success();
 }
 
+base::Status Layer::check_tensor_with_dim(const tensor::Tensor& tensor, base::DeviceType device_type,
+                                          base::DataType data_type,
+                                          std::vector<int32_t>& dims) const {
+    // 检查类型
+    if (tensor.empty()) {
+        return base::error::InvalidArgument("The tensor parameter is empty.");
+    }
+    if (tensor.device_type() != device_type) {
+        return base::error::InvalidArgument("The tensor has a wrong device type.");
+    }
+    if (tensor.data_type() != data_type) {
+        return base::error::InvalidArgument("The tensor has a wrong data type.");
+    }
+
+    // 检查维度个数
+    auto dims_size = tensor.dims_size();
+    if (dims_size != dims.size()) {
+        return base::error::InvalidArgument("The tensor has a wrong dims_size.");
+    }
+
+    // 检查各维度大小
+    for (int i = 0; i < dims_size; ++i) {
+        auto dim = tensor.get_dim(i);
+        if (dim != dims[i]) {
+            return base::error::InvalidArgument("The tensor has a wrong dim shape.");
+        }
+    }
+
+    return base::error::Success();
+}
+
 // 设备相关函数定义
 void Layer::to_cuda() {
     // 修改层的设备类型
