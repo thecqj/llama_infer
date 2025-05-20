@@ -24,7 +24,7 @@ enum class LayerType : uint8_t {
     kLayerSwiGLU    = 10
 };
 
-// 算子基类
+// ----------------------------------------- 算子基类 -----------------------------------------
 class BaseLayer {
 public:
     explicit BaseLayer(base::DeviceType device_type, LayerType layer_type,
@@ -81,7 +81,7 @@ protected:
     std::string layer_name_;    // 层名
     LayerType layer_type_ = LayerType::kLayerUnknown;                   // 层类型
     base::DataType data_type_ = base::DataType::kDataTypeUnknown;       // 数据类型
-    base::DeviceType device_type_ = base::DeviceType::kDeviceUnknown;    // 设备类型
+    base::DeviceType device_type_ = base::DeviceType::kDeviceUnknown;   // 设备类型
 
 public:
     // 属性相关函数
@@ -95,7 +95,7 @@ public:
     void set_device_type(base::DeviceType device_type) { device_type_ = device_type; }
 };
 
-// 无参算子类
+// ----------------------------------------- 无参算子类 -----------------------------------------
 class Layer : public BaseLayer {
 public:
     explicit Layer(base::DeviceType device_type, LayerType layer_type, std::string layer_name = "",
@@ -137,9 +137,9 @@ public:
     const tensor::Tensor& get_output(int32_t idx) const override;
     
 protected:
-    std::vector<tensor::Tensor> inputs_;
-    std::vector<tensor::Tensor> outputs_;
-    std::shared_ptr<kernel::CudaConfig> cuda_config_;
+    std::vector<tensor::Tensor> inputs_;    // 输入数据
+    std::vector<tensor::Tensor> outputs_;   // 输出数据
+    std::shared_ptr<kernel::CudaConfig> cuda_config_;   // cuda 配置
 
 public:
     // 检查相关
@@ -197,5 +197,34 @@ Layer::check_tensor_with_dim(const tensor::Tensor& tensor, base::DeviceType devi
 
     return base::error::Success();
 }
+
+// ----------------------------------------- 带参算子类 -----------------------------------------
+class LayerParam : public Layer {
+public:
+    explicit LayerParam(base::DeviceType device_type, LayerType layer_type, std::string layer_name = "", 
+                        base::DataType data_type = base::DataType::kDataTypeFp32) :
+            Layer(device_type, layer_type, layer_name, data_type) {}
+
+    // 设置权重
+    base::Status set_weight(int32_t idx, const tensor::Tensor& weight) override;
+
+    base::Status set_weight(int32_t idx, const std::vector<int32_t>& dims,
+                            const void* weight_ptr,
+                            base::DeviceType device_type = base::DeviceType::kDeviceUnknown) override;
+
+    // 设备相关
+    void to_cuda() override;
+
+protected:
+    std::vector<tensor::Tensor> weights_;   // 权重数据
+
+public:
+    // 权重相关函数
+    tensor::Tensor& get_weight(int32_t idx);
+    const tensor::Tensor& get_weight(int32_t idx) const;
+
+    size_t weight_size() const { return weights_.size(); }
+    void reset_weight_size(size_t size) { weights_.resize(size); }
+};
 
 } // namespace op

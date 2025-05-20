@@ -69,6 +69,7 @@ TEST(test_layer, test_to_cuda) {
     input2 = layer.get_input(1);
     output = layer.get_output(0);
 
+    ASSERT_EQ(layer.device_type(), DeviceType::kDeviceGPU);
     ASSERT_EQ(input1.device_type(), DeviceType::kDeviceGPU);
     ASSERT_EQ(input2.device_type(), DeviceType::kDeviceGPU);
     ASSERT_EQ(output.device_type(), DeviceType::kDeviceGPU);
@@ -180,4 +181,29 @@ TEST(test_layer, test_check_tensor_with_dim) {
                                          DataType::kDataTypeFp32, 1, 2, 2, 4);
     ASSERT_EQ(status.get_err_code(), StatusCode::kSuccess);
 
+}
+
+TEST(test_layer, test_weight) {
+    using namespace base;
+    using namespace op;
+    using namespace tensor;
+    auto alloc = CPUDeviceAllocatorFactory::get_instance();
+    std::vector<int32_t> dims{1, 2, 2, 5};
+
+    Tensor weight1(DataType::kDataTypeFp32, dims, true, alloc);
+    float* ptr = new float[20];
+
+    LayerParam layer(DeviceType::kDeviceCPU, LayerType::kLayerUnknown);
+    layer.reset_weight_size(2);
+    layer.set_weight(0, weight1);
+    layer.set_weight(1, dims, ptr, DeviceType::kDeviceCPU);
+    
+    ASSERT_EQ(layer.weight_size(), 2);
+    ASSERT_EQ(layer.get_weight(0).size(), 20);
+    ASSERT_EQ(layer.get_weight(1).dims_size(), 4);
+
+    layer.to_cuda();
+    ASSERT_EQ(layer.device_type(), DeviceType::kDeviceGPU);
+    ASSERT_EQ(layer.get_weight(0).device_type(), DeviceType::kDeviceGPU);
+    ASSERT_EQ(layer.get_weight(1).device_type(), DeviceType::kDeviceGPU);
 }

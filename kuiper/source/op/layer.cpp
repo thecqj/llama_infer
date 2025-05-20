@@ -1,4 +1,5 @@
 #include <glog/logging.h>
+#include <numeric>
 
 #include "op/layer.h"
 
@@ -59,6 +60,8 @@ base::Status Layer::check_tensor(const tensor::Tensor& tensor, base::DeviceType 
 
 // 设备相关函数定义
 void Layer::to_cuda() {
+    // 修改层的设备类型
+    device_type_ = base::DeviceType::kDeviceGPU;
     // 将输入张量移动到cuda
     for (auto& tensor : inputs_) {
         tensor.to_cuda(cuda_config_ ? cuda_config_->stream : nullptr);
@@ -139,6 +142,57 @@ base::Status Layer::forward(const tensor::Tensor& input1, const tensor::Tensor& 
     set_output(0, output);
 
     return forward();
+}
+
+// ---------------------------------- 带参算子类 ----------------------------------
+// 权重相关函数定义
+tensor::Tensor& LayerParam::get_weight(int32_t idx) {
+    CHECK_GE(idx, 0);
+    CHECK_LT(idx, weights_.size());
+    return weights_[idx];
+}
+
+const tensor::Tensor& LayerParam::get_weight(int32_t idx) const {
+    CHECK_GE(idx, 0);
+    CHECK_LT(idx, weights_.size());
+    return weights_[idx];
+}
+
+base::Status LayerParam::set_weight(int32_t idx, const tensor::Tensor& weight) {
+    CHECK_GE(idx, 0);
+    CHECK_LT(idx, weights_.size());
+    CHECK(weight.data_type() == data_type_);
+
+    // 不是空张量，还需检查设备类型是否一致
+    if (!weight.empty()) {
+        CHECK(weight.device_type() == device_type_);
+    }
+
+    weights_[idx] = weight;
+    return base::error::Success();
+}
+
+// 使用指针创建张量，并设置权重
+base::Status LayerParam::set_weight(int32_t idx, const std::vector<int32_t>& dims,
+                                    const void* weight_ptr, base::DeviceType device_type) {
+    CHECK_GE(idx, 0);
+    CHECK_LT(idx, weights_.size());
+    CHECK_NE(weight_ptr, nullptr);
+    CHECK(device_type_ == device_type);
+
+    // 用权重数据指针创建张量
+    tensor::Tensor weight(data_type_, dims, false, nullptr, const_cast<void*>(weight_ptr), device_type);
+    weights_[idx] = weight;
+
+    return base::error::Success();
+}
+
+// 设备相关
+void LayerParam::to_cuda() {
+    Layer::to_cuda();
+    for (auto& weight: weights_) {
+        weight.to_cuda();
+    }
 }
 
 } // namespace op
