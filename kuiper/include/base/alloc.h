@@ -2,6 +2,8 @@
 
 #include <cstddef>
 #include <memory>
+#include <map>
+#include <vector>
 
 #include "base/base.h"
 
@@ -49,6 +51,17 @@ public:
     void release(void* ptr) const override;
 };
 
+// CUDA 内存块
+struct CudaMemoryBuffer {
+    void* data_;
+    size_t byte_size_;
+    bool busy_;
+
+    CudaMemoryBuffer() = default;
+    CudaMemoryBuffer(void* data, size_t byte_size, bool busy) 
+        : data_{data}, byte_size_{byte_size}, busy_{busy} {}
+};
+
 // CUDA内存分配器
 class CUDADeviceAllocator: public DeviceAllocator {
 public:
@@ -56,6 +69,11 @@ public:
 
     void* allocate(size_t byte_size) const override;
     void release(void* ptr) const override;
+
+private:
+    mutable std::map<int, size_t> no_busy_cnt_; // 设备中剩余的空闲内存大小
+    mutable std::map<int, std::vector<CudaMemoryBuffer>> big_buffers_map_;  // 大块内存池
+    mutable std::map<int, std::vector<CudaMemoryBuffer>> cuda_buffers_map_; // 小块内存池
 };
 
 // 工厂模式

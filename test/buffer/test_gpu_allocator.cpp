@@ -21,3 +21,22 @@ TEST(test_gpu_allocator, allocate) {
     alloc->release(d_p);
     free(h_p);
 }
+
+TEST(test_gpu_allocator, multi_alloc) {
+    using namespace base;
+    auto alloc = CUDADeviceAllocatorFactory::get_instance();
+
+    srand(time(nullptr));
+
+    for (int epoch = 0; epoch < 10; ++epoch) {
+        std::vector<void*> ptrs;
+        for (int i = 0; i < 100; ++i) {
+            int byte_size = rand() % (2 * 1024 * 1024) + 1;
+            ptrs.push_back(alloc->allocate(byte_size));
+        }
+        for (int i = 0; i < 100; ++i) {
+            alloc->release(ptrs[i]);
+        }
+    }
+
+}
