@@ -30,7 +30,7 @@ TEST(test_buffer, use_externel) {
 
     float* ptr = new float[32];
     *ptr = 5;
-    Buffer buffer(32, nullptr, ptr, true);  // use_externel == true, ptr != nullptr, allocator == nullptr
+    Buffer buffer(32 * 4, nullptr, ptr, true);  // use_externel == true, ptr != nullptr, allocator == nullptr
     auto buffer_ptr = static_cast<float*>(buffer.ptr());
 
     ASSERT_EQ(buffer.is_externel(), true);

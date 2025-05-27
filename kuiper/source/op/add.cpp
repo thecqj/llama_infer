@@ -16,7 +16,9 @@ base::Status VecAddLayer::check() const {
     auto input1 = get_input(0);
     auto input2 = get_input(1);
     auto output = get_output(0);
-
+    // 取 inpu1 各维度的大小
+    auto dims = input1.dims();
+    
     base::Status status;
 
     // 检查 input1
@@ -26,13 +28,13 @@ base::Status VecAddLayer::check() const {
         return status;
     }
     // 检查 input2
-    status = check_tensor(input2, device_type_, data_type_);
+    status = check_tensor_with_dim(input2, device_type_, data_type_, dims);
     if (!status) {
         LOG(ERROR) << "The input tensor 2 error in the add layer.";
         return status;
     }
     // 检查 output
-    status = check_tensor(output, device_type_, data_type_);
+    status = check_tensor_with_dim(output, device_type_, data_type_, dims);
     if (!status) {
         LOG(ERROR) << "The output tensor error in the add layer.";
         return status;
@@ -48,13 +50,14 @@ base::Status VecAddLayer::forward() {
         return status;
     }
 
+    if (device_type_ == base::DeviceType::kDeviceGPU) {
+        CHECK(cuda_config_ != nullptr);
+    }
+
     // 取张量
     auto input1 = get_input(0);
     auto input2 = get_input(1);
     auto output = get_output(0);
-    if (device_type_ == base::DeviceType::kDeviceGPU) {
-        CHECK(cuda_config_ != nullptr);
-    }
 
     // 实际计算
     auto accumulate_call = kernel::get_add_kernel(device_type_);

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "base/cuda_config.h"
 #include "tensor/tensor.h"
 
 namespace kernel {
@@ -12,8 +11,20 @@ using AddKernel = void(*)(const tensor::Tensor& input1, const tensor::Tensor& in
 using RMSNormKernel = void(*)(const tensor::Tensor& input, const tensor::Tensor& weight,
                               const tensor::Tensor& output, void* stream);
 
+using MatmulKernel = void(*)(const tensor::Tensor& input, const tensor::Tensor& weight,
+                             const tensor::Tensor& output, float scale, void* stream);
+
+using MatmulKernelQuant = void(*)(const tensor::Tensor& input, const tensor::Tensor& weight,
+                                  const tensor::Tensor& output, int32_t group_size,
+                                  const tensor::Tensor& scale, void* stream);
+
 // function
 AddKernel get_add_kernel(base::DeviceType device_type);
+
 RMSNormKernel get_rmsnorm_kernel(base::DeviceType device_type);
+
+MatmulKernel get_matmul_kernel(base::DeviceType device_type);
+MatmulKernelQuant get_matmul_kernel_quant8(base::DeviceType device_type);
+
 
 } // namespace kernel
