@@ -211,9 +211,24 @@ base::Status LayerParam::set_weight(int32_t idx, const std::vector<int32_t>& dim
     CHECK_NE(weight_ptr, nullptr);
     CHECK(device_type_ == device_type);
 
-    // 用权重数据指针创建张量
-    tensor::Tensor weight(data_type_, dims, false, nullptr, const_cast<void*>(weight_ptr), device_type);
-    weights_[idx] = weight;
+    if (!is_quant_layer_) {
+        // 用权重数据指针创建非量化张量
+        tensor::Tensor weight(base::DataType::kDataTypeFp32, dims, false, nullptr, 
+                              const_cast<void*>(weight_ptr), device_type);
+        weights_[idx] = weight;
+    } else {
+        // 用权重数据指针创建量化张量
+        tensor::Tensor weight(base::DataType::kDataTypeInt8, dims, false, nullptr, 
+                              const_cast<void*>(weight_ptr), device_type);
+        weights_[idx] = weight;
+        // 还需要设置量化信息
+        const int32_t weight_size = static_cast<int32_t>(weight.size());
+        CHECK(weight_size % group_size_ == 0);
+
+        int32_t scales_num = weight_size / group_size_; // 多少个量化系数
+        scales_ = tensor::Tensor{base::DataType::kDataTypeFp32, scales_num, false, nullptr,
+                                 reinterpret_cast<float*>((int8_t*)weight_ptr + weight_size), device_type};
+    }
 
     return base::error::Success();
 }

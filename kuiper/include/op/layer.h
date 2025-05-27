@@ -178,9 +178,10 @@ Layer::check_tensor_with_dim(const tensor::Tensor& tensor, base::DeviceType devi
 // ----------------------------------------- 带参算子类 -----------------------------------------
 class LayerParam : public Layer {
 public:
-    explicit LayerParam(base::DeviceType device_type, LayerType layer_type, std::string layer_name = "", 
+    explicit LayerParam(base::DeviceType device_type, LayerType layer_type,
+                        bool is_quant_layer = false, std::string layer_name = "", 
                         base::DataType data_type = base::DataType::kDataTypeFp32) :
-            Layer(device_type, layer_type, layer_name, data_type) {}
+            Layer(device_type, layer_type, layer_name, data_type), is_quant_layer_{is_quant_layer} {}
 
     // 设置权重
     base::Status set_weight(int32_t idx, const tensor::Tensor& weight) override;
@@ -194,6 +195,10 @@ public:
 
 protected:
     std::vector<tensor::Tensor> weights_;   // 权重数据
+    // 量化有关信息
+    bool is_quant_layer_ = false;   // 是否量化
+    int32_t group_size_ = 0;        // 量化组大小
+    tensor::Tensor scales_;         // 量化系数
 
 public:
     // 权重相关函数
@@ -202,6 +207,19 @@ public:
 
     size_t weight_size() const { return weights_.size(); }
     void reset_weight_size(size_t size) { weights_.resize(size); }
+
+    // 量化相关函数
+    void set_group_size(int32_t group_size) { group_size_ = group_size; }
+    
+    void set_scales(const tensor::Tensor& scales) { 
+        CHECK(!scales.empty());
+        scales_ = scales;
+    }
+
+    int32_t get_scale_num() const {
+        CHECK(!scales_.empty());
+        return static_cast<int32_t>(scales_.size());
+    }
 };
 
 } // namespace op
