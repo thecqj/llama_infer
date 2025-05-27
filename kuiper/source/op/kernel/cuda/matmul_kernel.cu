@@ -47,6 +47,34 @@ __global__ void matmul_kernel_cu_fp32(const float* input, const float* weight, f
     }
 }
 
+template <const int BLOCK_SIZE = 128>
+__global__ void matmul_kernel_cu_fp32_int8(const float* input, const int8_t* weight, float* output,
+                                           const float* scale, const int32_t group_size, int K, int M) {
+    const int tid = threadIdx.x;
+    const int bx = blockIdx.x;  // 第几个block，即第几行
+
+    // 求每个线程处理部分乘积和
+    float sum = 0.f;
+    #pragma unroll
+    for (int i = tid; i < M; i += BLOCK_SIZE) {
+        const int weight_idx = bx * M + i;
+        const int group_id = weight_idx / group_size;
+        sum += input[i] * scale[group_id] * static_cast<float>(weight[weight_idx]);
+    }
+
+    // 规约求和
+    using BlockReduce = cub::BlockReduce<float, BLOCK_SIZE>;
+    __shared__ typename BlockReduce::TempStorage temp;  // 为 BlockReduce 分配的共享内存
+
+    sum = BlockReduce(temp).Sum(sum);   // 规约求和
+    __syncthreads();
+
+    // 将结果写到output
+    if (tid == 0) {
+        output[bx] = sum;
+    }
+}
+
 void matmul_kernel_cu(const tensor::Tensor& input, const tensor::Tensor& weight,
                       const tensor::Tensor& output, float scale, void* stream) {
     // 判空
@@ -93,7 +121,43 @@ void matmul_kernel_cu(const tensor::Tensor& input, const tensor::Tensor& weight,
 void matmul_kernel_cu_qint8(const tensor::Tensor& input, const tensor::Tensor& weight,
                             const tensor::Tensor& output, int32_t group_size,
                             const tensor::Tensor& scale, void* stream) {
+    // 判空
+    CHECK_EQ(input.empty(), false);
+    CHECK_EQ(weight.empty(), false);
+    CHECK_EQ(output.empty(), false);
 
+    // 检查设备类型
+    CHECK(input.device_type() == base::DeviceType::kDeviceGPU);
+    CHECK(weight.device_type() == base::DeviceType::kDeviceGPU);
+    CHECK(output.device_type() == base::DeviceType::kDeviceGPU);
+
+    // 检查大小
+    CHECK_EQ(weight.dims_size(), 2);
+    const int32_t weight_dim0 = weight.get_dim(0);
+    const int32_t weight_dim1 = weight.get_dim(1);
+
+    const int32_t input_dim = input.size();
+    CHECK_EQ(input_dim, weight_dim1);
+
+    const int32_t output_dim = output.size();
+    CHECK_EQ(output_dim, weight_dim0);
+
+    // 设置网格大小
+    const int BLOCK_SIZE = 128;
+    dim3 block(BLOCK_SIZE); // 128个线程处理一行
+    dim3 grid(weight_dim0); // 共 dim0 行，即 dim0 个 block
+
+    // 启动内核
+    if (stream) {
+        cudaStream_t stream_ = static_cast<cudaStream_t>(stream);
+        matmul_kernel_cu_fp32_int8<BLOCK_SIZE><<<grid, block, 0, stream_>>>(
+            input.ptr<float>(), weight.ptr<int8_t>(), const_cast<float*>(output.ptr<float>()),
+            scale.ptr<float>(), group_size, weight_dim0, weight_dim1);
+    } else {
+        matmul_kernel_cu_fp32_int8<BLOCK_SIZE><<<grid, block>>>(
+            input.ptr<float>(), weight.ptr<int8_t>(), const_cast<float*>(output.ptr<float>()),
+            scale.ptr<float>(), group_size, weight_dim0, weight_dim1);
+    }
 }
 
 } // namespace kernel

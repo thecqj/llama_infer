@@ -192,7 +192,6 @@ const tensor::Tensor& LayerParam::get_weight(int32_t idx) const {
 base::Status LayerParam::set_weight(int32_t idx, const tensor::Tensor& weight) {
     CHECK_GE(idx, 0);
     CHECK_LT(idx, weights_.size());
-    CHECK(weight.data_type() == data_type_);
 
     // 不是空张量，还需检查设备类型是否一致
     if (!weight.empty()) {
