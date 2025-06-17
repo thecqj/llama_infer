@@ -48,9 +48,6 @@ private:
     void init_buffer(std::shared_ptr<base::DeviceAllocator> alloc, base::DataType data_type,
                      bool need_alloc, void* ptr, base::DeviceType device_type);
 
-    // 设置张量数据所在的设备类型
-    void set_device_type(base::DeviceType device_type);
-
 public:
     // 分配内存，或重新分配内存
     bool allocate(std::shared_ptr<base::DeviceAllocator> allocator, bool need_realloc = false);
@@ -67,6 +64,9 @@ public:
 
     // 返回当前数据所在的设备类型
     base::DeviceType device_type() const;
+
+    // 设置张量数据所在的设备类型
+    void set_device_type(base::DeviceType device_type);
 
 public:
     // 返回指向张量数据的指针
